@@ -16,7 +16,7 @@ app.get('/', (req, res) => {
     request({
       url: 'https://api.spotify.com/v1/me',
       headers: {
-        Authorization: `Basic ${Buffer.from(req.cookie.SPOTIFY_USER_ACCESS).toString('base64')}`
+        Authorization: `Basic ${Buffer.from(req.cookies.SPOTIFY_USER_ACCESS).toString('base64')}`
       },
       method: 'GET'
     }, (error, response, body) => {
