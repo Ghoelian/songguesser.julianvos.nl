@@ -12,19 +12,21 @@ app.use(cookieParser())
 let state
 
 app.get('/', (req, res) => {
-  if (typeof req.headers.cookie.SPOTIFY_USER_AUTHORIZATION !== 'undefined' && typeof req.headers.cookieSPOTIFY_USER_ACCESS !== 'undefined' && typeof req.headers.cookie.SPOTIFY_USER_REFRESH_TOKEN !== 'undefined') {
-    request({
-      url: 'https://api.spotify.com/v1/me',
-      headers: {
-        Authorization: `Basic ${Buffer.from(process.env.SPOTIFY_USER_ACCESS).toString('base64')}`
-      },
-      method: 'GET'
-    }, (error, response, body) => {
-      if (error) throw error
-      res.status(200).send(JSON.parse(body).display_name)
-    })
-  } else {
-    res.status(200).send('Not logged in')
+  if (typeof req.headers.cookie !== 'undefined') {
+    if (typeof req.headers.cookie.SPOTIFY_USER_AUTHORIZATION !== 'undefined' && typeof req.headers.cookieSPOTIFY_USER_ACCESS !== 'undefined' && typeof req.headers.cookie.SPOTIFY_USER_REFRESH_TOKEN !== 'undefined') {
+      request({
+        url: 'https://api.spotify.com/v1/me',
+        headers: {
+          Authorization: `Basic ${Buffer.from(process.env.SPOTIFY_USER_ACCESS).toString('base64')}`
+        },
+        method: 'GET'
+      }, (error, response, body) => {
+        if (error) throw error
+        res.status(200).send(JSON.parse(body).display_name)
+      })
+    } else {
+      res.status(200).send('Not logged in')
+    }
   }
 })
 
