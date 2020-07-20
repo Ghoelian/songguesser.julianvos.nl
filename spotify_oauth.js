@@ -57,7 +57,7 @@ const authenticate = (req, res) => {
       if (error || JSON.parse(body).error) {
         console.log(`[Server] Error while trying to get access token.\n\t${error || JSON.parse(body).error + JSON.parse(body).error_description}`)
         res.send('Error while trying to get access token. Please try again.')
-        res.statusCode(400)
+        res.sendStatus(400)
       } else {
         console.log('[Server] Getting access token succeeded.')
 
@@ -68,7 +68,7 @@ const authenticate = (req, res) => {
         req.session.save((err) => {
           if (err) console.log(`[Server] Error saving session.\n\t${err}`)
           res.send('Error while saving session. Please try again.')
-          res.statusCode(500)
+          res.sendStatus(500)
         })
 
         res.send('Done.')
