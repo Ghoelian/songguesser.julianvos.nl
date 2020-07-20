@@ -12,7 +12,7 @@ app.use(cookieParser())
 let state
 
 app.get('/', (req, res) => {
-  if (typeof req.cookie('SPOTIFY_USER_AUTHORIZATION') !== 'undefined' && typeof req.cookie('SPOTIFY_USER_ACCESS') !== 'undefined' && typeof req.cookie('SPOTIFY_USER_REFRESH_TOKEN') !== 'undefined') {
+  if (typeof req.headers.cookie.SPOTIFY_USER_AUTHORIZATION !== 'undefined' && typeof req.headers.cookieSPOTIFY_USER_ACCESS !== 'undefined' && typeof req.headers.cookie.SPOTIFY_USER_REFRESH_TOKEN !== 'undefined') {
     request({
       url: 'https://api.spotify.com/v1/me',
       headers: {
@@ -36,8 +36,8 @@ app.get('/login', (req, res) => {
 
 app.get('/auth', (req, res) => {
   if (req.query.state === state) {
-    req.cookie('SPOTIFY_USER_AUTHORIZATION', req.query.code)
-    req.cookie('SPOTIFY_USER_AUTHORIZATION_DATE', Date.now())
+    res.headers.cookie.SPOTIFY_USER_AUTHORIZATION = req.query.code
+    res.headers.cookie.SPOTIFY_USER_AUTHORIZATION_DATE = Date.now()
 
     request({
       url: 'https://accounts.spotify.com/api/token',
@@ -55,9 +55,9 @@ app.get('/auth', (req, res) => {
       } else {
         console.log('[Server] Getting access token succeeded.')
 
-        res.cookie('SPOTIFY_USER_ACCESS', JSON.parse(body).access_token)
-        res.cookie('SPOTIFY_USER_ACCESS_EXPIRES_IN', JSON.parse(body).expires_in)
-        res.cookie('SPOTIFY_USER_REFRESH_TOKEN', JSON.parse(body).refresh_token)
+        res.headers.cookie.SPOTIFY_USER_ACCESS = JSON.parse(body).access_token
+        res.headers.cookie.SPOTIFY_USER_ACCESS_EXPIRES_IN = JSON.parse(body).expires_in
+        res.headers.cookie.SPOTIFY_USER_REFRESH_TOKEN = JSON.parse(body).refresh_token
 
         req.session.save((err) => {
           if (err) {
@@ -95,8 +95,8 @@ const refresh = (req, res) => {
       result = 0
       console.log('[Server] Token refresh succeeded.')
 
-      req.cookie('SPOTIFY_USER_ACCESS', JSON.parse(body).access_token)
-      req.cookie('SPOTIFY_USER_ACCESS_EXPIRES_IN', JSON.parse(body).expires_in)
+      res.headers.cookie.SPOTIFY_USER_ACCESS = JSON.parse(body).access_token
+      res.headers.cookie.SPOTIFY_USER_ACCESS_EXPIRES_IN = JSON.parse(body).expires_in
     }
   })
 
