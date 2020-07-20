@@ -37,7 +37,6 @@ const login = (res) => {
   state = uuidv4()
   const scopes = 'playlist-modify-public playlist-modify-private'
   res.redirect(`https://accounts.spotify.com/authorize?response_type=code&client_id=${process.env.SPOTIFY_API_ID}${(scopes ? '&scope=' + encodeURIComponent(scopes) : '')}&state=${state}&redirect_uri=${process.env.REDIRECT_URI}`)
-  console.log(`https://accounts.spotify.com/authorize?response_type=code&client_id=${process.env.SPOTIFY_API_ID}${(scopes ? '&scope=' + encodeURIComponent(scopes) : '')}&state=${state}&redirect_uri=${process.env.REDIRECT_URI}`)
 }
 
 const authenticate = (req, res) => {
@@ -57,8 +56,6 @@ const authenticate = (req, res) => {
       body: `grant_type=authorization_code&code=${req.session.SPOTIFY_USER_AUTHORIZATION}&redirect_uri=${process.env.REDIRECT_URI}`
     },
     (error, response, body) => {
-      console.log(`Basic ${Buffer.from(process.env.SPOTIFY_API_ID + ':' + process.env.SPOTIFY_API_SECRET).toString('base64')}`)
-      console.log(`grant_type=authorization_code&code=${req.session.SPOTIFY_USER_AUTHORIZATION}&redirect_uri=${process.env.REDIRECT_URI}`)
       if (error || JSON.parse(body).error) {
         console.log(`[Server] Error while trying to get access token.\n\t${error || JSON.parse(body).error + JSON.parse(body).error_description}`)
         result = 1
@@ -68,6 +65,7 @@ const authenticate = (req, res) => {
         req.session.SPOTIFY_USER_ACCESS = JSON.parse(body).access_token
         req.session.SPOTIFY_USER_ACCESS_EXPIRES_IN = JSON.parse(body).expires_in
         req.session.SPOTIFY_USER_REFRESH_TOKEN = JSON.parse(body).refresh_token
+        console.log(JSON.parse(body).access_token)
 
         req.session.save((err) => {
           if (err) console.log(`[Server] Error saving session.\n\t${err}`)
