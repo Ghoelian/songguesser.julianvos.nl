@@ -11,7 +11,9 @@ app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: true,
-  cookie: { secure: true }
+  cookie: {
+    secure: true
+  }
 }))
 
 let state
@@ -23,8 +25,6 @@ app.get('/login', (req, res) => {
 })
 
 app.get('/auth', (req, res) => {
-  let result
-
   if (req.query.state === state) {
     req.session.SPOTIFY_USER_AUTHORIZATION = req.query.code
     req.session.SPOTIFY_USER_AUTHORIZATION_DATE = Date.now()
@@ -41,7 +41,7 @@ app.get('/auth', (req, res) => {
     (error, response, body) => {
       if (error || JSON.parse(body).error) {
         console.log(`[Server] Error while trying to get access token.\n\t${error || JSON.parse(body).error + JSON.parse(body).error_description}`)
-        result = 1
+        res.status(500).send('An error occurred while trying to log in. Please try again.')
       } else {
         console.log('[Server] Getting access token succeeded.')
 
@@ -50,20 +50,16 @@ app.get('/auth', (req, res) => {
         req.session.SPOTIFY_USER_REFRESH_TOKEN = JSON.parse(body).refresh_token
 
         req.session.save((err) => {
-          if (err) console.log(`[Server] Error saving session.\n\t${err}`)
-          result = 1
+          if (err) {
+            console.log(`[Server] Error saving session.\n\t${err}`)
+            res.status(500).send('An error occurred while trying to log in. Please try again.')
+          }
         })
       }
     })
   } else {
-    result = 1
-  }
-
-  if (result === 1) {
+    console.log('[Server] Invalid state parameter.')
     res.status(500).send('An error occurred while trying to log in. Please try again.')
-  } else {
-    // res.status(200).send(req.session.SPOTIFY_USER_ACCESS)
-    console.log(req.session.SPOTIFY_USER_ACCESS)
   }
 })
 
