@@ -1,25 +1,18 @@
 const express = require('express')
 const app = express()
 const request = require('request')
-const session = require('express-session')
+const cookieParser = require('cookie-parser')
 const uuidv4 = require('uuid/v4')
 
 require('dotenv').config()
 
 app.set('trust proxy', 1)
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: true,
-  cookie: {
-    secure: true
-  }
-}))
+app.use(cookieParser())
 
 let state
 
 app.get('/', (req, res) => {
-  if (typeof req.session.SPOTIFY_USER_AUTHORIZATION !== 'undefined' && typeof req.session.SPOTIFY_USER_ACCESS !== 'undefined' && typeof req.session.SPOTIFY_USER_REFRESH_TOKEN !== 'undefined') {
+  if (typeof req.cookie('SPOTIFY_USER_AUTHORIZATION') !== 'undefined' && typeof req.cookie('SPOTIFY_USER_ACCESS') !== 'undefined' && typeof req.cookie('SPOTIFY_USER_REFRESH_TOKEN') !== 'undefined') {
     request({
       url: 'https://api.spotify.com/v1/me',
       headers: {
@@ -43,8 +36,8 @@ app.get('/login', (req, res) => {
 
 app.get('/auth', (req, res) => {
   if (req.query.state === state) {
-    req.session.SPOTIFY_USER_AUTHORIZATION = req.query.code
-    req.session.SPOTIFY_USER_AUTHORIZATION_DATE = Date.now()
+    req.cookie('SPOTIFY_USER_AUTHORIZATION', req.query.code)
+    req.cookie('SPOTIFY_USER_AUTHORIZATION_DATE', Date.now())
 
     request({
       url: 'https://accounts.spotify.com/api/token',
@@ -53,7 +46,7 @@ app.get('/auth', (req, res) => {
         'Content-Type': 'application/x-www-form-urlencoded'
       },
       method: 'POST',
-      body: `grant_type=authorization_code&code=${req.session.SPOTIFY_USER_AUTHORIZATION}&redirect_uri=${process.env.REDIRECT_URI}`
+      body: `grant_type=authorization_code&code=${req.cookie('SPOTIFY_USER_AUTHORIZATION')}&redirect_uri=${process.env.REDIRECT_URI}`
     },
     (error, response, body) => {
       if (error || JSON.parse(body).error) {
@@ -62,9 +55,9 @@ app.get('/auth', (req, res) => {
       } else {
         console.log('[Server] Getting access token succeeded.')
 
-        req.session.SPOTIFY_USER_ACCESS = JSON.parse(body).access_token
-        req.session.SPOTIFY_USER_ACCESS_EXPIRES_IN = JSON.parse(body).expires_in
-        req.session.SPOTIFY_USER_REFRESH_TOKEN = JSON.parse(body).refresh_token
+        res.cookie('SPOTIFY_USER_ACCESS', JSON.parse(body).access_token)
+        res.cookie('SPOTIFY_USER_ACCESS_EXPIRES_IN', JSON.parse(body).expires_in)
+        res.cookie('SPOTIFY_USER_REFRESH_TOKEN', JSON.parse(body).refresh_token)
 
         req.session.save((err) => {
           if (err) {
@@ -92,7 +85,7 @@ const refresh = (req, res) => {
       'Content-Type': 'application/x-www-form-urlencoded'
     },
     method: 'POST',
-    body: `grant_type=refresh_token&refresh_token=${req.session.SPOTIFY_USER_REFRESH_TOKEN}`
+    body: `grant_type=refresh_token&refresh_token=${req.cookie('SPOTIFY_USER_REFRESH_TOKEN')}`
   },
   (error, response, body) => {
     if (error || JSON.parse(body).error) {
@@ -102,8 +95,8 @@ const refresh = (req, res) => {
       result = 0
       console.log('[Server] Token refresh succeeded.')
 
-      req.session.SPOTIFY_USER_ACCESS = JSON.parse(body).access_token
-      req.session.SPOTIFY_USER_ACCESS_EXPIRES_IN = JSON.parse(body).expires_in
+      req.cookie('SPOTIFY_USER_ACCESS', JSON.parse(body).access_token)
+      req.cookie('SPOTIFY_USER_ACCESS_EXPIRES_IN', JSON.parse(body).expires_in)
     }
   })
 
