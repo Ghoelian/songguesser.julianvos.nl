@@ -21,7 +21,7 @@ app.get('/', (req, res) => {
       method: 'GET'
     }, (error, response, body) => {
       if (error) throw error
-      res.status(200).send(JSON.parse(body).display_name)
+      res.status(200).send(JSON.parse(body))
     })
   } else {
     res.status(200).send('Not logged in')
