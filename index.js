@@ -18,9 +18,26 @@ app.use(session({
 
 let state
 
+app.get('/', (req, res) => {
+  if (typeof req.session.SPOTIFY_USER_AUTHORIZATION !== 'undefined' && typeof req.session.SPOTIFY_USER_ACCESS !== 'undefined' && typeof req.session.SPOTIFY_USER_REFRESH_TOKEN !== 'undefined') {
+    request({
+      url: 'https://api.spotify.com/v1/me',
+      headers: {
+        Authorization: `Basic ${Buffer.from(process.env.SPOTIFY_USER_ACCESS).toString('base64')}`
+      },
+      method: 'GET'
+    }, (error, response, body) => {
+      if (error) throw error
+      res.status(200).send(JSON.parse(body).display_name)
+    })
+  } else {
+    res.status(200).send('Not logged in')
+  }
+})
+
 app.get('/login', (req, res) => {
   state = uuidv4()
-  const scopes = 'playlist-modify-public playlist-modify-private'
+  const scopes = 'streaming playlist-read-collaborative playlist-read-private user-library-read'
   res.redirect(`https://accounts.spotify.com/authorize?response_type=code&client_id=${process.env.SPOTIFY_API_ID}${(scopes ? '&scope=' + encodeURIComponent(scopes) : '')}&state=${state}&redirect_uri=${process.env.REDIRECT_URI}`)
 })
 
@@ -55,7 +72,6 @@ app.get('/auth', (req, res) => {
             res.status(500).send('An error occurred while trying to log in. Please try again.')
           }
 
-          console.log(req.session.SPOTIFY_USER_ACCESS)
           res.status(200).send('Success.')
         })
       }
