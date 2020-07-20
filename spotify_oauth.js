@@ -56,6 +56,8 @@ const authenticate = (req, res) => {
       body: `grant_type=authorization_code&code=${req.session.SPOTIFY_USER_AUTHORIZATION}&redirect_uri=${process.env.REDIRECT_URI}`
     },
     (error, response, body) => {
+      console.log(`Basic ${Buffer.from(process.env.SPOTIFY_API_ID + ':' + process.env.SPOTIFY_API_SECRET).toString('base64')}`)
+      console.log(`grant_type=authorization_code&code=${req.session.SPOTIFY_USER_AUTHORIZATION}&redirect_uri=${process.env.REDIRECT_URI}`)
       if (error || JSON.parse(body).error) {
         console.log(`[Server] Error while trying to get access token.\n\t${error || JSON.parse(body).error + JSON.parse(body).error_description}`)
         result = 1
