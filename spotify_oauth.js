@@ -53,7 +53,7 @@ const authenticate = (req, res) => {
         'Content-Type': 'application/x-www-form-urlencoded'
       },
       method: 'POST',
-      body: `grant_type=authorization_code&code=${req.session.SPOTIFY_USER_AUTHORIZATION}&redirect_uri=http://localhost:3000/auth`
+      body: `grant_type=authorization_code&code=${req.session.SPOTIFY_USER_AUTHORIZATION}&redirect_uri=${process.env.REDIRECT_URI}`
     },
     (error, response, body) => {
       if (error || JSON.parse(body).error) {
@@ -71,7 +71,6 @@ const authenticate = (req, res) => {
           result = 1
         })
 
-        result = 0
         res.send('Done.')
         res.send(200)
       }
