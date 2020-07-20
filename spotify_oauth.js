@@ -3,7 +3,7 @@ const uuidv4 = require('uuid/v4')
 
 let state
 
-const refresh = (req) => {
+const refresh = (req, res) => {
   let result
 
   request({
@@ -56,6 +56,8 @@ const authenticate = (req, res) => {
     (error, response, body) => {
       if (error || JSON.parse(body).error) {
         console.log(`[Server] Error while trying to get access token.\n\t${error || JSON.parse(body).error + JSON.parse(body).error_description}`)
+        res.send('Error while trying to get access token. Please try again.')
+        res.statusCode(400)
       } else {
         console.log('[Server] Getting access token succeeded.')
 
@@ -65,13 +67,17 @@ const authenticate = (req, res) => {
 
         req.session.save((err) => {
           if (err) console.log(`[Server] Error saving session.\n\t${err}`)
+          res.send('Error while saving session. Please try again.')
+          res.statusCode(500)
         })
 
         res.send('Done.')
+        res.send(200)
       }
     })
   } else {
     res.send('Invalid state parameter. Please try again.')
+    res.send(400)
   }
 }
 
