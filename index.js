@@ -76,7 +76,7 @@ app.get('/auth', (req, res) => {
         res.cookie('SPOTIFY_USER_ACCESS_EXPIRES_IN', JSON.parse(body).expires_in, { maxAge: 900000 })
         res.cookie('SPOTIFY_USER_REFRESH_TOKEN', JSON.parse(body).refresh_token, { maxAge: 900000 })
 
-        res.status(200).send('Success')
+        res.redirect('https://songguesser.julianvos.nl')
       }
     })
   } else {
