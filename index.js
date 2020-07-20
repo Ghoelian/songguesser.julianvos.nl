@@ -54,6 +54,9 @@ app.get('/auth', (req, res) => {
             console.log(`[Server] Error saving session.\n\t${err}`)
             res.status(500).send('An error occurred while trying to log in. Please try again.')
           }
+
+          console.log(req.session.SPOTIFY_USER_ACCESS)
+          res.status(200).send('Success.')
         })
       }
     })
