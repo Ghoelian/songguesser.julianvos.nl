@@ -37,7 +37,7 @@ app.get('/', (req, res) => {
     </head>
     <body>
       <p>Not logged in.</p>
-      <form action="/login" method="POST">
+      <form action="/login" method="GET">
         <button type=submit>Log in</button>
       </form>
     </body>
