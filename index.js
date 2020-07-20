@@ -61,14 +61,7 @@ app.get('/auth', (req, res) => {
         res.cookie('SPOTIFY_USER_ACCESS_EXPIRES_IN', JSON.parse(body).expires_in, { maxAge: 900000 })
         res.cookie('SPOTIFY_USER_REFRESH_TOKEN', JSON.parse(body).refresh_token, { maxAge: 900000 })
 
-        req.session.save((err) => {
-          if (err) {
-            console.log(`[Server] Error saving session.\n\t${err}`)
-            res.status(500).send('An error occurred while trying to log in. Please try again.')
-          }
-
-          res.status(200).send('Success.')
-        })
+        res.status(200).send('Success')
       }
     })
   } else {
