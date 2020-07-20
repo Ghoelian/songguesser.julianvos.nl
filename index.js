@@ -50,6 +50,7 @@ app.get('/auth', (req, res) => {
     },
     (error, response, body) => {
       if (error || JSON.parse(body).error) {
+        console.log(req.cookies.SPOTIFY_USER_AUTHORIZATION)
         console.log(`[Server] Error while trying to get access token.\n\t${error || JSON.parse(body).error + JSON.parse(body).error_description}`)
         res.status(500).send('An error occurred while trying to log in. Please try again.')
       } else {
