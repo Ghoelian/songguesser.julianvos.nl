@@ -22,7 +22,7 @@ app.get('/auth', (req, res) => {
   if (spotify.authenticate(req, res) === 1) {
     res.status(500).send('An error occurred while trying to log in. Please try again.')
   } else {
-    res.status(200).send('Logged in.')
+    res.status(200).send(req.session.SPOTIFY_USER_ACCESS)
   }
 })
 
