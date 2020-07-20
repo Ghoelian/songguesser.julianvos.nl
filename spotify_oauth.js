@@ -70,9 +70,6 @@ const authenticate = (req, res) => {
           if (err) console.log(`[Server] Error saving session.\n\t${err}`)
           result = 1
         })
-
-        res.send('Done.')
-        res.send(200)
       }
     })
   } else {
