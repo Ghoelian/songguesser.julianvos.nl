@@ -16,7 +16,7 @@ app.get('/', (req, res) => {
     request({
       url: 'https://api.spotify.com/v1/me',
       headers: {
-        Authorization: `Basic ${Buffer.from(process.env.SPOTIFY_USER_ACCESS).toString('base64')}`
+        Authorization: `Basic ${Buffer.from(req.cookie.SPOTIFY_USER_ACCESS).toString('base64')}`
       },
       method: 'GET'
     }, (error, response, body) => {
@@ -46,12 +46,10 @@ app.get('/auth', (req, res) => {
         'Content-Type': 'application/x-www-form-urlencoded'
       },
       method: 'POST',
-      body: `grant_type=authorization_code&code=${req.cookies.SPOTIFY_USER_AUTHORIZATION}&redirect_uri=${process.env.REDIRECT_URI}`
+      body: `grant_type=authorization_code&code=${req.query.code}&redirect_uri=${process.env.REDIRECT_URI}`
     },
     (error, response, body) => {
       if (error || JSON.parse(body).error) {
-        console.log(req.cookies.SPOTIFY_USER_AUTHORIZATION + '\n')
-        console.log(req.query.code)
         console.log(`[Server] Error while trying to get access token.\n\t${error || JSON.parse(body).error + JSON.parse(body).error_description}`)
         res.status(500).send('An error occurred while trying to log in. Please try again.')
       } else {
