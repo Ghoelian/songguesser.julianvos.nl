@@ -21,10 +21,27 @@ app.get('/', (req, res) => {
       method: 'GET'
     }, (error, response, body) => {
       if (error) throw error
-      res.status(200).send(JSON.parse(body).display_name)
+      res.status(200).send(`
+      <head>
+        <title>Homepage</title>
+      </head>
+      <body>
+        <p>Logged in as ${JSON.parse(body).display_name}</p>
+      </body>
+      `)
     })
   } else {
-    res.status(200).send('Not logged in')
+    res.status(200).send(`
+    <head>
+      <title>Homepage</title>
+    </head>
+    <body>
+      <p>Not logged in.</p>
+      <form action="/login" method="POST">
+        <button type=submit>Log in</button>
+      </form>
+    </body>
+    `)
   }
 })
 
