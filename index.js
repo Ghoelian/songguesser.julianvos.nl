@@ -12,21 +12,19 @@ app.use(cookieParser())
 let state
 
 app.get('/', (req, res) => {
-  if (typeof req.headers.cookie !== 'undefined') {
-    if (typeof req.headers.cookie.SPOTIFY_USER_AUTHORIZATION !== 'undefined' && typeof req.headers.cookieSPOTIFY_USER_ACCESS !== 'undefined' && typeof req.headers.cookie.SPOTIFY_USER_REFRESH_TOKEN !== 'undefined') {
-      request({
-        url: 'https://api.spotify.com/v1/me',
-        headers: {
-          Authorization: `Basic ${Buffer.from(process.env.SPOTIFY_USER_ACCESS).toString('base64')}`
-        },
-        method: 'GET'
-      }, (error, response, body) => {
-        if (error) throw error
-        res.status(200).send(JSON.parse(body).display_name)
-      })
-    } else {
-      res.status(200).send('Not logged in')
-    }
+  if (typeof req.cookies.SPOTIFY_USER_AUTHORIZATION !== 'undefined' && typeof req.cookies.SPOTIFY_USER_ACCESS !== 'undefined' && typeof req.cookies.SPOTIFY_USER_REFRESH_TOKEN !== 'undefined') {
+    request({
+      url: 'https://api.spotify.com/v1/me',
+      headers: {
+        Authorization: `Basic ${Buffer.from(process.env.SPOTIFY_USER_ACCESS).toString('base64')}`
+      },
+      method: 'GET'
+    }, (error, response, body) => {
+      if (error) throw error
+      res.status(200).send(JSON.parse(body).display_name)
+    })
+  } else {
+    res.status(200).send('Not logged in')
   }
 })
 
@@ -38,8 +36,8 @@ app.get('/login', (req, res) => {
 
 app.get('/auth', (req, res) => {
   if (req.query.state === state) {
-    res.headers.cookie.SPOTIFY_USER_AUTHORIZATION = req.query.code
-    res.headers.cookie.SPOTIFY_USER_AUTHORIZATION_DATE = Date.now()
+    res.cookie('SPOTIFY_USER_AUTHORIZATION', req.query.code, { maxAge: 900000 })
+    res.cookie('SPOTIFY_USER_AUTHORIZATION_DATE', Date.now(), { maxAge: 900000 })
 
     request({
       url: 'https://accounts.spotify.com/api/token',
@@ -48,7 +46,7 @@ app.get('/auth', (req, res) => {
         'Content-Type': 'application/x-www-form-urlencoded'
       },
       method: 'POST',
-      body: `grant_type=authorization_code&code=${req.cookie('SPOTIFY_USER_AUTHORIZATION')}&redirect_uri=${process.env.REDIRECT_URI}`
+      body: `grant_type=authorization_code&code=${req.cookies.SPOTIFY_USER_AUTHORIZATION}&redirect_uri=${process.env.REDIRECT_URI}`
     },
     (error, response, body) => {
       if (error || JSON.parse(body).error) {
@@ -57,9 +55,9 @@ app.get('/auth', (req, res) => {
       } else {
         console.log('[Server] Getting access token succeeded.')
 
-        res.headers.cookie.SPOTIFY_USER_ACCESS = JSON.parse(body).access_token
-        res.headers.cookie.SPOTIFY_USER_ACCESS_EXPIRES_IN = JSON.parse(body).expires_in
-        res.headers.cookie.SPOTIFY_USER_REFRESH_TOKEN = JSON.parse(body).refresh_token
+        res.cookie('SPOTIFY_USER_ACCESS', JSON.parse(body).access_token, { maxAge: 900000 })
+        res.cookie('SPOTIFY_USER_ACCESS_EXPIRES_IN', JSON.parse(body).expires_in, { maxAge: 900000 })
+        res.cookie('SPOTIFY_USER_REFRESH_TOKEN', JSON.parse(body).refresh_token, { maxAge: 900000 })
 
         req.session.save((err) => {
           if (err) {
@@ -87,7 +85,7 @@ const refresh = (req, res) => {
       'Content-Type': 'application/x-www-form-urlencoded'
     },
     method: 'POST',
-    body: `grant_type=refresh_token&refresh_token=${req.cookie('SPOTIFY_USER_REFRESH_TOKEN')}`
+    body: `grant_type=refresh_token&refresh_token=${req.cookies.SPOTIFY_USER_REFRESH_TOKEN}`
   },
   (error, response, body) => {
     if (error || JSON.parse(body).error) {
@@ -97,8 +95,8 @@ const refresh = (req, res) => {
       result = 0
       console.log('[Server] Token refresh succeeded.')
 
-      res.headers.cookie.SPOTIFY_USER_ACCESS = JSON.parse(body).access_token
-      res.headers.cookie.SPOTIFY_USER_ACCESS_EXPIRES_IN = JSON.parse(body).expires_in
+      res.cookie('SPOTIFY_USER_ACCESS', JSON.parse(body).access_token, { maxAge: 900000 })
+      res.cookie('SPOTIFY_USER_ACCESS_EXPIRES_IN', JSON.parse(body).expires_in, { maxAge: 900000 })
     }
   })
 
