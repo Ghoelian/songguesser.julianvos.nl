@@ -19,7 +19,11 @@ app.get('/login', (req, res) => {
 })
 
 app.get('/auth', (req, res) => {
-  spotify.authenticate(req, res)
+  if (spotify.authenticate(req, res) === 1) {
+    res.status(500).send('An error occurred while trying to log in. Please try again.')
+  } else {
+    res.status(200).send('Logged in.')
+  }
 })
 
 const listener = app.listen(process.env.PORT, () => {
