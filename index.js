@@ -12,6 +12,12 @@ app.use(cookieParser())
 let state
 
 app.get('/', (req, res) => {
+  res.write(`
+  <html>
+  <head>Song Guesser</head>
+  <body>
+  `)
+
   if (typeof req.cookies.SPOTIFY_USER_AUTHORIZATION !== 'undefined' && typeof req.cookies.SPOTIFY_USER_ACCESS !== 'undefined' && typeof req.cookies.SPOTIFY_USER_REFRESH_TOKEN !== 'undefined') {
     getUserDetails(req, (err, data) => {
       if (err) res.write(err)
@@ -27,6 +33,10 @@ app.get('/', (req, res) => {
           res.write(data[i].name)
         }
 
+        res.write(`
+        </body>
+        </html>
+        `)
         res.end()
       })
     })
