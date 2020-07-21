@@ -31,13 +31,15 @@ app.get('/', (req, res) => {
       spotify.getUserPlaylists(req, (err, data) => {
         if (err) res.write(err)
 
-        res.write('Pick a playlists:<br/><select name="playlist" id="playlist">')
+        res.write('Pick a playlists:<br/><form action="/play" method="GET"><select name="playlist" id="playlist">')
         for (let i = 0; i < data.length; i++) {
-          res.write(`<option value="${data[i].name}">${data[i].name}</option>`)
+          res.write(`<option value="${data[i].id}">${data[i].name}</option>`)
         }
 
         res.write(`
-        </select>
+        </select><br/>
+        <button type="submit">Play</button>
+        </form>
         </body>
         </html>
         `)
@@ -59,6 +61,34 @@ app.get('/', (req, res) => {
 
     res.end()
   }
+})
+
+app.get('/play', (req, res) => {
+  spotify.getPlaylistSongs(req, (err, data) => {
+    if (err === 1) {
+      res.redirect('/')
+    } else if (err) {
+      throw err
+    }
+
+    res.write(`
+    <html>
+    <head>
+    <meta charset="UTF-8">
+    <title>Song Guesser</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    </head>
+    <body style="font-family:'Roboto', sans-serif;">
+    `)
+    for (let i = 0; i < data.length; i++) {
+      res.write(`${data[i].track.name}<br/>`)
+    }
+    res.write(`
+    </body>
+    </html>
+    `)
+    res.end()
+  })
 })
 
 app.get('/login', (req, res) => {
