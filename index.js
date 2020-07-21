@@ -10,6 +10,7 @@ app.set('trust proxy', 1)
 app.use(cookieParser())
 
 let state
+let totalLength = 0
 
 app.get('/', (req, res) => {
   res.write(`
@@ -28,12 +29,13 @@ app.get('/', (req, res) => {
         if (err) res.write(err)
 
         res.write('Your playlists:<br/>')
-
         for (let i = 0; i < data.length; i++) {
-          res.write(data[i].name + '<br/>')
+          totalLength++
+          res.write(data[i] + '<br/>')
         }
 
         res.write(`
+        ${totalLength}
         </body>
         </html>
         `)
@@ -41,17 +43,19 @@ app.get('/', (req, res) => {
       })
     })
   } else {
-    res.status(200).send(`
-    <head>
-      <title>Homepage</title>
-    </head>
-    <body>
+    res.write(`
       <p>Not logged in.</p>
       <form action="/login" method="GET">
         <button type=submit>Log in</button>
       </form>
-    </body>
     `)
+
+    res.write(`
+    </body>
+    </html>
+    `)
+
+    res.end()
   }
 })
 
@@ -79,10 +83,10 @@ app.get('/auth', (req, res) => {
       method: 'POST',
       body: `grant_type=authorization_code&code=${req.query.code}&redirect_uri=${process.env.REDIRECT_URI}`
     },
-    (error, response, body) => {
-      if (error || JSON.parse(body).error) {
-        console.log(`[Server] Error while trying to get access token.\n\t${error || JSON.parse(body).error + JSON.parse(body).error_description}`)
-        res.status(500).send('An error occurred while trying to log in. Please try again.')
+    (err, response, body) => {
+      if (err || JSON.parse(body).err) {
+        console.log(`[Server] err while trying to get access token.\n\t${err || JSON.parse(body).err + JSON.parse(body).err_description}`)
+        res.status(500).send('An err occurred while trying to log in. Please try again.')
       } else {
         console.log('[Server] Getting access token succeeded.')
 
@@ -96,12 +100,12 @@ app.get('/auth', (req, res) => {
           maxAge: 900000
         })
 
-        res.redirect('https://songguesser.julianvos.nl')
+        res.redirect('/')
       }
     })
   } else {
     console.log('[Server] Invalid state parameter.')
-    res.status(500).send('An error occurred while trying to log in. Please try again.')
+    res.status(500).send('An err occurred while trying to log in. Please try again.')
   }
 })
 
@@ -117,10 +121,10 @@ const refresh = (req, res) => {
     method: 'POST',
     body: `grant_type=refresh_token&refresh_token=${req.cookies.SPOTIFY_USER_REFRESH_TOKEN}`
   },
-  (error, response, body) => {
-    if (error || JSON.parse(body).error) {
+  (err, response, body) => {
+    if (err || JSON.parse(body).err) {
       result = 1
-      console.log(`[Server] Error while trying to refresh token.\n\t${error || JSON.parse(body).error + JSON.parse(body).error_description}`)
+      console.log(`[Server] err while trying to refresh token.\n\t${err || JSON.parse(body).err + JSON.parse(body).err_description}`)
     } else {
       result = 0
       console.log('[Server] Token refresh succeeded.')
@@ -144,22 +148,79 @@ const getUserDetails = (req, callback) => {
       Authorization: `Bearer ${req.cookies.SPOTIFY_USER_ACCESS}`
     },
     method: 'GET'
-  }, (error, response, body) => {
-    if (error) return callback(error)
+  }, (err, response, body) => {
+    if (err) return callback(err)
     return callback(null, JSON.parse(body).display_name, req)
   })
 }
 
 const getUserPlaylists = (req, callback) => {
-  request({
-    url: 'https://api.spotify.com/v1/me/playlists',
-    headers: {
-      Authorization: `Bearer ${req.cookies.SPOTIFY_USER_ACCESS}`
-    },
-    method: 'GET'
-  }, (error, response, body) => {
-    if (error) return callback(error)
-    return callback(null, JSON.parse(body).items)
+  let total = 0
+  let whole = 0
+  let remainder = 0
+  let offset = 0
+  const items = []
+
+  new Promise((resolve, reject) => {
+    request({
+      url: 'https://api.spotify.com/v1/me/playlists?limit=50&offset=0',
+      headers: {
+        Authorization: `Bearer ${req.cookies.SPOTIFY_USER_ACCESS}`
+      },
+      method: 'GET'
+    }, (err, response, body) => {
+      if (err) reject(err)
+      total = JSON.parse(body).total
+      whole = Math.floor(total / 50)
+      remainder = JSON.parse(body).total % 50
+
+      resolve()
+    })
+  }).then((result) => {
+    new Promise((resolve, reject) => {
+      for (let i = 0; i < whole; i++) {
+        request({
+          url: `https://api.spotify.com/v1/me/playlists?limit=50&offset=${offset}`,
+          headers: {
+            Authorization: `Bearer ${req.cookies.SPOTIFY_USER_ACCESS}`
+          },
+          method: 'GET'
+        }, (err, response, body) => {
+          if (err) throw err
+          offset += 50
+          const parsedBody = JSON.parse(body).items
+
+          for (let j = 0; j < parsedBody.length; j++) {
+            items.push(parsedBody[j].name)
+          }
+
+          if (i === whole - 1) {
+            resolve()
+          }
+        })
+      }
+    }).then((result) => {
+      new Promise((resolve, reject) => {
+        request({
+          url: `https://api.spotify.com/v1/me/playlists?limit=${remainder}&offset=${offset}`,
+          headers: {
+            Authorization: `Bearer ${req.cookies.SPOTIFY_USER_ACCESS}`
+          },
+          method: 'GET'
+        }, (err, result, body) => {
+          if (err) throw err
+          const parsedBody = JSON.parse(body).items
+
+          for (let i = 0; i < parsedBody.length; i++) {
+            items.push(parsedBody[i].name)
+          }
+
+          resolve()
+        })
+      }).then((result) => {
+        callback(null, items)
+      })
+    })
   })
 }
 
