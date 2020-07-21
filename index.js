@@ -23,7 +23,7 @@ app.get('/', (req, res) => {
 
         res.write('Your playlists:<br/>')
 
-        for (let i = 0; i < data.sizeOf(); i++) {
+        for (let i = 0; i < data.length; i++) {
           res.write(data[i])
         }
 
@@ -149,7 +149,6 @@ const getUserPlaylists = (req, callback) => {
     method: 'GET'
   }, (error, response, body) => {
     if (error) return callback(error)
-    console.log(JSON.parse(body).items)
     return callback(null, JSON.parse(body).items)
   })
 }
