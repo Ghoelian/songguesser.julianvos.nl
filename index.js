@@ -13,22 +13,22 @@ let state
 
 app.get('/', (req, res) => {
   if (typeof req.cookies.SPOTIFY_USER_AUTHORIZATION !== 'undefined' && typeof req.cookies.SPOTIFY_USER_ACCESS !== 'undefined' && typeof req.cookies.SPOTIFY_USER_REFRESH_TOKEN !== 'undefined') {
-    request({
-      url: 'https://api.spotify.com/v1/me',
-      headers: {
-        Authorization: `Bearer ${req.cookies.SPOTIFY_USER_ACCESS}`
-      },
-      method: 'GET'
-    }, (error, response, body) => {
-      if (error) throw error
-      res.status(200).send(`
-      <head>
-        <title>Homepage</title>
-      </head>
-      <body>
-        <p>Logged in as ${JSON.parse(body).display_name}</p>
-      </body>
-      `)
+    getUserDetails(req, (err, data) => {
+      if (err) res.write(err)
+
+      res.write(`Logged in as ${data}`)
+
+      getUserPlaylists(req, (err, data) => {
+        if (err) res.write(err)
+
+        res.write('Your playlists:<br/>')
+
+        for (let i = 0; i < data.sizeOf(); i++) {
+          res.write(data[i])
+        }
+
+        res.end()
+      })
     })
   } else {
     res.status(200).send(`
@@ -53,8 +53,12 @@ app.get('/login', (req, res) => {
 
 app.get('/auth', (req, res) => {
   if (req.query.state === state) {
-    res.cookie('SPOTIFY_USER_AUTHORIZATION', req.query.code, { maxAge: 900000 })
-    res.cookie('SPOTIFY_USER_AUTHORIZATION_DATE', Date.now(), { maxAge: 900000 })
+    res.cookie('SPOTIFY_USER_AUTHORIZATION', req.query.code, {
+      maxAge: 900000
+    })
+    res.cookie('SPOTIFY_USER_AUTHORIZATION_DATE', Date.now(), {
+      maxAge: 900000
+    })
 
     request({
       url: 'https://accounts.spotify.com/api/token',
@@ -72,9 +76,15 @@ app.get('/auth', (req, res) => {
       } else {
         console.log('[Server] Getting access token succeeded.')
 
-        res.cookie('SPOTIFY_USER_ACCESS', JSON.parse(body).access_token, { maxAge: 900000 })
-        res.cookie('SPOTIFY_USER_ACCESS_EXPIRES_IN', JSON.parse(body).expires_in, { maxAge: 900000 })
-        res.cookie('SPOTIFY_USER_REFRESH_TOKEN', JSON.parse(body).refresh_token, { maxAge: 900000 })
+        res.cookie('SPOTIFY_USER_ACCESS', JSON.parse(body).access_token, {
+          maxAge: 900000
+        })
+        res.cookie('SPOTIFY_USER_ACCESS_EXPIRES_IN', JSON.parse(body).expires_in, {
+          maxAge: 900000
+        })
+        res.cookie('SPOTIFY_USER_REFRESH_TOKEN', JSON.parse(body).refresh_token, {
+          maxAge: 900000
+        })
 
         res.redirect('https://songguesser.julianvos.nl')
       }
@@ -105,12 +115,42 @@ const refresh = (req, res) => {
       result = 0
       console.log('[Server] Token refresh succeeded.')
 
-      res.cookie('SPOTIFY_USER_ACCESS', JSON.parse(body).access_token, { maxAge: 900000 })
-      res.cookie('SPOTIFY_USER_ACCESS_EXPIRES_IN', JSON.parse(body).expires_in, { maxAge: 900000 })
+      res.cookie('SPOTIFY_USER_ACCESS', JSON.parse(body).access_token, {
+        maxAge: 900000
+      })
+      res.cookie('SPOTIFY_USER_ACCESS_EXPIRES_IN', JSON.parse(body).expires_in, {
+        maxAge: 900000
+      })
     }
   })
 
   return result
+}
+
+const getUserDetails = (req, callback) => {
+  request({
+    url: 'https://api.spotify.com/v1/me',
+    headers: {
+      Authorization: `Bearer ${req.cookies.SPOTIFY_USER_ACCESS}`
+    },
+    method: 'GET'
+  }, (error, response, body) => {
+    if (error) return callback(null, error)
+    return callback(JSON.parse(body).display_name)
+  })
+}
+
+const getUserPlaylists = (req, callback) => {
+  request({
+    url: 'https://api.spotify.com/v1/me/playlists',
+    headers: {
+      Authorization: `Bearer ${req.cookies.SPOTIFY_USER_ACCESS}`
+    },
+    method: 'GET'
+  }, (error, response, body) => {
+    if (error) return callback(null, error)
+    return callback(JSON.parse(body).items)
+  })
 }
 
 const listener = app.listen(process.env.PORT, () => {
