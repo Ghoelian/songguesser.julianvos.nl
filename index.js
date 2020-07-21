@@ -24,7 +24,7 @@ app.get('/', (req, res) => {
         res.write('Your playlists:<br/>')
 
         for (let i = 0; i < data.length; i++) {
-          res.write(data[i])
+          res.write(data[i].name)
         }
 
         res.end()
