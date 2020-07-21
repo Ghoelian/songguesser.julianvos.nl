@@ -22,7 +22,7 @@ app.get('/', (req, res) => {
     getUserDetails(req, (err, data) => {
       if (err) res.write(err)
 
-      res.write(`Logged in as ${data}`)
+      res.write(`Logged in as ${data}<br/>`)
 
       getUserPlaylists(req, (err, data) => {
         if (err) res.write(err)
