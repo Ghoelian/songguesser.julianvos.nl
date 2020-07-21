@@ -135,8 +135,8 @@ const getUserDetails = (req, callback) => {
     },
     method: 'GET'
   }, (error, response, body) => {
-    if (error) return callback(null, error)
-    return callback(JSON.parse(body).display_name)
+    if (error) return callback(error)
+    return callback(null, JSON.parse(body).display_name)
   })
 }
 
@@ -148,8 +148,8 @@ const getUserPlaylists = (req, callback) => {
     },
     method: 'GET'
   }, (error, response, body) => {
-    if (error) return callback(null, error)
-    return callback(JSON.parse(body).items)
+    if (error) return callback(error)
+    return callback(null, JSON.parse(body).items)
   })
 }
 
