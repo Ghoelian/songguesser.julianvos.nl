@@ -15,9 +15,11 @@ app.get('/', (req, res) => {
   res.write(`
   <html>
   <head>
+  <meta charset="UTF-8">
   <title>Song Guesser</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
   </head>
-  <body>
+  <body style="font-family:'Roboto', sans-serif;">
   `)
 
   if (typeof req.cookies.SPOTIFY_USER_AUTHORIZATION !== 'undefined' && typeof req.cookies.SPOTIFY_USER_ACCESS !== 'undefined' && typeof req.cookies.SPOTIFY_USER_REFRESH_TOKEN !== 'undefined') {
@@ -29,12 +31,13 @@ app.get('/', (req, res) => {
       spotify.getUserPlaylists(req, (err, data) => {
         if (err) res.write(err)
 
-        res.write('Your playlists:<br/><br/>')
+        res.write('Pick a playlists:<br/><select name="playlist" id="playlist">')
         for (let i = 0; i < data.length; i++) {
-          res.write(data[i].name + '<br/>')
+          res.write(`<option value="${data[i].name}">${data[i].name}</option>`)
         }
 
         res.write(`
+        </select>
         </body>
         </html>
         `)
