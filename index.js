@@ -1,126 +1,103 @@
-const express = require('express')
-const app = express()
-const cookieParser = require('cookie-parser')
-const spotify = require('./lib/spotify_api')
-const uuidv4 = require('uuid/v4')
+const http = new XMLHttpRequest()
+const url = 'https://api.julianvos.nl/songguesser'
 
-require('dotenv').config()
+http.open('POST', url, true)
+http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded')
 
-app.set('trust proxy', 1)
-app.use(cookieParser())
+http.onload = (e) => {
+    let logged_in = document.getElementById('logged_in')
+    if (http.status === 200) {
+        console.log('Logged in')
 
-let state
+        window.onSpotifyWebPlaybackSDKReady = () => {
+            const token = '[My Spotify Web API access token]'
+            const player = new Spotify.Player({
+                name: 'Web Playback SDK Quick Start Player',
+                getOAuthToken: cb => {
+                    cb(token)
+                }
+            })
 
-app.get('/', (req, res) => {
-  res.write(`
-  <html>
-  <head>
-  <meta charset="UTF-8">
-  <title>Song Guesser</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
-  </head>
-  <body style="font-family:'Roboto', sans-serif;">
-  `)
+            player.addListener('initialization_error', ({
+                message
+            }) => {
+                console.error(message);
+            })
+            player.addListener('authentication_error', ({
+                message
+            }) => {
+                console.error(message);
+            })
+            player.addListener('account_error', ({
+                message
+            }) => {
+                console.error(message)
+            })
+            player.addListener('playback_error', ({
+                message
+            }) => {
+                console.error(message)
+            });
 
-  if (typeof req.cookies.SPOTIFY_USER_AUTHORIZATION !== 'undefined' && typeof req.cookies.SPOTIFY_USER_ACCESS !== 'undefined' && typeof req.cookies.SPOTIFY_USER_REFRESH_TOKEN !== 'undefined') {
-    spotify.getUserDetails(req, (err, data) => {
-      if (err) res.write(err)
+            player.addListener('player_state_changed', state => {
+                console.log(state)
+            })
 
-      res.write(`Logged in as ${data}<br/><br/>`)
+            player.addListener('ready', ({
+                device_id
+            }) => {
+                console.log('Ready with Device ID', device_id)
+            })
 
-      spotify.getUserPlaylists(req, (err, data) => {
-        if (err) res.write(err)
+            player.addListener('not_ready', ({
+                device_id
+            }) => {
+                console.log('Device ID has gone offline', device_id)
+            })
 
-        res.write('Pick a playlists:<br/><form action="/play" method="GET"><select name="playlist" id="playlist">')
-        for (let i = 0; i < data.length; i++) {
-          res.write(`<option value="${data[i].id}">${data[i].name}</option>`)
+            player.connect()
         }
 
-        res.write(`
-        </select><br/>
-        <button type="submit">Play</button>
+        let select = document.getElementById('playlist_picker')
+        const response = JSON.parse(http.responseText)
+
+        logged_in.innerHTML = `<p>Logged in as ${response.username}</p>`
+
+        let temp = `
+            Pick a playlist:<br/>
+            <form action="/play/" method="GET">
+                <select name="playlist" id="playlist">
+        `
+
+        for (let i = 0; i < response.data.length; i++) {
+            temp += `<option value="${response.data[i].id}">${response.data[i].name}</option>`
+        }
+
+        temp += `
+            </select><br/>
+            <button type="submit">Play</button>
         </form>
-        </body>
-        </html>
-        `)
-        res.end()
-      })
-    })
-  } else {
-    res.write(`
-      <p>Not logged in.</p>
-      <form action="/login" method="GET">
-        <button type=submit>Log in</button>
-      </form>
-    `)
+    `
 
-    res.write(`
-    </body>
-    </html>
-    `)
+    select.innerHTML += temp
 
-    res.end()
-  }
-})
 
-app.get('/play', (req, res) => {
-  spotify.getPlaylistSongs(req, (err, data) => {
-    if (err === 1) {
-      res.redirect('/')
-    } else if (err) {
-      throw err
+
+    } else {
+        console.log('Not logged in')
+
+        logged_in.innerHTML = `
+        <p>Not logged in.</p>
+        <form action="./login/" method="GET">
+            <button type="submit">Log in</button>
+        </form>
+        `
     }
+}
 
-    res.write(`
-    <html>
-    <head>
-    <meta charset="UTF-8">
-    <title>Song Guesser</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
-    </head>
-    <body style="font-family:'Roboto', sans-serif;">
-    `)
-    for (let i = 0; i < data.length; i++) {
-      res.write(`${data[i].track.name}<br/>`)
-    }
-    res.write(`
-    </body>
-    </html>
-    `)
-    res.end()
-  })
-})
+const getCookie = (name) => {
+    var v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+    return v ? v[2] : null;
+}
 
-app.get('/login', (req, res) => {
-  state = uuidv4()
-  const scopes = 'streaming playlist-read-collaborative playlist-read-private user-library-read'
-  res.redirect(`https://accounts.spotify.com/authorize?response_type=code&client_id=${process.env.SPOTIFY_API_ID}${(scopes ? '&scope=' + encodeURIComponent(scopes) : '')}&state=${state}&redirect_uri=${process.env.REDIRECT_URI}`)
-})
-
-app.get('/auth', (req, res) => {
-  spotify.authenticateUser(req, state, (err, result) => {
-    if (err) throw err
-
-    res.cookie('SPOTIFY_USER_AUTHORIZATION', result.SPOTIFY_USER_AUTHORIZATION, {
-      maxAge: 900000
-    })
-    res.cookie('SPOTIFY_USER_AUTHORIZATION_DATE', result.SPOTIFY_USER_AUTHORIZATION_DATE, {
-      maxAge: 900000
-    })
-    res.cookie('SPOTIFY_USER_ACCESS', result.SPOTIFY_USER_ACCESS, {
-      maxAge: 900000
-    })
-    res.cookie('SPOTIFY_USER_ACCESS_EXPIRES_IN', result.SPOTIFY_USER_ACCESS_EXPIRES_IN, {
-      maxAge: 900000
-    })
-    res.cookie('SPOTIFY_USER_REFRESH_TOKEN', result.SPOTIFY_USER_REFRESH_TOKEN, {
-      maxAge: 900000
-    })
-
-    res.redirect('/')
-  })
-})
-
-const listener = app.listen(process.env.PORT, () => {
-  console.log(`[Server] Listening on port ${listener.address().port}`)
-})
+http.send(`spotify_user_authorization=${getCookie('spotify_user_authorization')}&spotify_user_access=${getCookie('spotify_user_access')}&spotify_user_refresh_token=${getCookie('spotify_user_refresh_token')}`)
