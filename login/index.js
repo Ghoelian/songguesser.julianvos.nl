@@ -1,5 +1,5 @@
 const http = new XMLHttpRequest()
-const url = window.location.origin === 'https://songguesser.julianvos.nl' ? 'https://api.julianvos.nl/songguesser/login' : 'http://localhost:3004/songguesser/login'
+const url = window.location.origin === 'https://songguesser.julianvos.nl' ? 'https://api.julianvos.nl/songguesser/login/' : 'http://localhost:3004/songguesser/login/'
 
 http.overrideMimeType('text/html')
 http.open('GET', url)

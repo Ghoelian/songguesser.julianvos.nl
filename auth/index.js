@@ -5,7 +5,7 @@ const getCookie = (name) => {
   return v ? v[2] : null
 }
 
-const url = window.location.origin === 'https://songguesser.julianvos.nl' ? `https://api.julianvos.nl/songguesser/auth?state=${getCookie('state')}&amp;code=${new URL(window.location.href).searchParams.get('code')}` : `http://localhost:3004/songguesser/auth?state=${getCookie('state')}&code=${new URL(window.location.href).searchParams.get('code')}`
+const url = window.location.origin === 'https://songguesser.julianvos.nl' ? `https://api.julianvos.nl/songguesser/auth?state=${getCookie('state')}&code=${new URL(window.location.href).searchParams.get('code')}` : `http://localhost:3004/songguesser/auth?state=${getCookie('state')}&code=${new URL(window.location.href).searchParams.get('code')}`
 
 http.overrideMimeType('text/html')
 http.open('GET', url)
