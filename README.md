@@ -1,3 +1,5 @@
+[![Build Status](https://jenkins.julianvos.nl/buildStatus/icon?job=songguesser.julianvos.nl)](https://jenkins.julianvos.nl/job/songguesser.julianvos.nl/)
+
 # Spotify Song Guessing Game (needs better name I know)
 Just a little song guessing game.
 Instead of being totally random, or being sorted by genre which is still way too broad in my opinion, this game uses your own Spotify playlists.
